@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CVE List</title>
+    
+    <!-- Bootstrap 5 CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Custom Styles -->
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .container {
+            margin-top: 40px;
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        .table-container {
+            overflow-x: auto;
+        }
+        .table {
+            margin-top: 20px;
+        }
+        .pagination a {
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2 class="text-center mb-4">CVE List</h2>
+
+        <!-- Filters Form -->
+        <form id="filterForm" class="row g-3" onsubmit="filterTable(); return false;">
+            <div class="col-md-4">
+                <label for="filterCveId" class="form-label">CVE ID:</label>
+                <input type="text" class="form-control" id="filterCveId" name="filterCveId" value="{{ request.args.get('filterCveId', '') }}">
+            </div>
+            <div class="col-md-4">
+                <label for="filterCvssScore" class="form-label">CVSS Score:</label>
+                <input type="number" step="0.1" class="form-control" id="filterCvssScore" name="filterCvssScore" value="{{ request.args.get('filterCvssScore', '') }}">
+            </div>
+            <div class="col-md-4">
+                <label for="filterDateModified" class="form-label">Date Modified:</label>
+                <input type="date" class="form-control" id="filterDateModified" name="filterDateModified" value="{{ request.args.get('filterDateModified', '') }}">
+            </div>
+            <div class="col-12 text-center">
+                <button type="submit" class="btn btn-primary px-4">Apply Filters</button>
+            </div>
+        </form>
+
+        <!-- Results Per Page Dropdown -->
+        <div class="mt-4 d-flex justify-content-end">
+            <label for="resultsPerPage" class="me-2 align-self-center">Results per page:</label>
+            <select id="resultsPerPage" class="form-select w-auto" onchange="changeResultsPerPage()">
+                <option value="5" {% if results_per_page == 5 %}selected{% endif %}>5</option>
+                <option value="10" {% if results_per_page == 10 %}selected{% endif %}>10</option>
+                <option value="20" {% if results_per_page == 20 %}selected{% endif %}>20</option>
+            </select>
+        </div>
+
+        <!-- CVE Table -->
+        <div class="table-container mt-3">
+            <table class="table table-hover table-striped">
+                <thead class="table-dark">
+                    <tr>
+                        <th>CVE ID</th>
+                        <th>CVSS Score</th>
+                        <th>Date Modified</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for cve in cves %}
+                    <tr>
+                        <td>{{ cve.cve_id }}</td>
+                        <td>{{ cve.cvss_v2_score }}</td>
+                        <td>{{ cve.modified_date }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        <nav class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if page > 1 %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page - 1 }}&resultsPerPage={{ results_per_page }}&{{ request.query_string.decode() }}">Previous</a>
+                    </li>
+                {% endif %}
+                <li class="page-item active">
+                    <span class="page-link">Page {{ page }}</span>
+                </li>
+                {% if cves|length == results_per_page %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page + 1 }}&resultsPerPage={{ results_per_page }}&{{ request.query_string.decode() }}">Next</a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+
+    <!-- JavaScript -->
+    <script>
+        function filterTable() {
+            let filterCveId = document.getElementById("filterCveId").value.trim();
+            let filterCvssScore = document.getElementById("filterCvssScore").value.trim();
+            let filterDateModified = document.getElementById("filterDateModified").value.trim();
+            
+            let urlParams = new URLSearchParams(window.location.search);
+            urlParams.set("page", 1);
+            
+            if (filterCveId) urlParams.set("filterCveId", filterCveId);
+            else urlParams.delete("filterCveId");
+            
+            if (filterCvssScore) urlParams.set("filterCvssScore", filterCvssScore);
+            else urlParams.delete("filterCvssScore");
+            
+            if (filterDateModified) urlParams.set("filterDateModified", filterDateModified);
+            else urlParams.delete("filterDateModified");
+            
+            window.location.search = urlParams.toString();
+        }
+        
+        function changeResultsPerPage() {
+            let resultsPerPage = document.getElementById("resultsPerPage").value;
+            let urlParams = new URLSearchParams(window.location.search);
+            urlParams.set("resultsPerPage", resultsPerPage);
+            urlParams.set("page", 1);
+            window.location.search = urlParams.toString();
+        }
+    </script>
+
+</body>
+</html>
